@@ -27,11 +27,10 @@ class Asset {
 }
 
 class Threat {
-  constructor(name, category, type, severity) {
+  constructor(name, category, risk) {
     this.name = name;
     this.category = category;
-    this.type = type;
-    this.severity = severity;
+    this.risk = risk;
   }
 }
 
@@ -99,6 +98,12 @@ function draw() {
         document.getElementById("asset-i").value=null;
         document.getElementById("asset-a").value=null;
 
+        document.getElementById("threat-name").value=null
+        document.getElementById("tcat1").checked=null
+        document.getElementById("tcat2").checked=null
+        document.getElementById("tcat3").checked=null
+        document.getElementById("threat-risk").value=null
+
         var tag_boxes = document.querySelectorAll('input[name="asset-tag"]');
         for (const tag_box in tag_boxes) {
           tag_box.checked = false;
@@ -108,20 +113,56 @@ function draw() {
         // filling in the popup DOM elements
         document.getElementById("operation").innerText = "Edit Node";
         document.getElementById("node-id").value = data.id;
+
         // document.getElementById("node-label").value = data.label;
         for(const asset in assets){
-          if (asset.id == data.id){
+          if (assets[asset].id == data.id){
+
+            console.log(assets[asset].threats)
+
             document.getElementById("asset-name").value = asset.name;
-            document.getElementById("asset-descrption").value = asset.description;
+            document.getElementById("asset-description").value = asset.description;
             document.getElementById("asset-c").value = asset.risk_c;
             document.getElementById("asset-i").value = asset.risk_i;
             document.getElementById("asset-a").value = asset.risk_a;
+            
+
+            console.log('130');
             // document.getElementById("node-id").value = tags[0];
             var tag_boxes = document.querySelectorAll('input[name="asset-tag"]');
             for (const tag_box in tag_boxes) {
-              if (tag_box.value in asset.tags) {
+              if (tag_box.value in assets[asset].tags) {
                 tag_box.checked = true;
               }
+            }
+
+            var tbody = document.getElementById('threats');
+
+
+            console.log('139');
+            for (threat in assets[asset].threats){
+
+              console.log('threats: ' + assets[asset].threats)
+
+              var tr = "<tr>"
+
+              tr += '<td><input value="'+ assets[asset].threats[threat].name + '" placeholder="e.g. Morris Worm" />'
+            
+              
+
+              var tcat_boxes = ['Confidentiality', 'Integrity', 'Availability']
+              for (let i = 0; i < tcat_boxes.length; i++) {
+                if (assets[asset].threats[threat].category.includes(tcat_boxes[i])) {
+                  tr += '<input name="threat-category" type="checkbox" value="' + tcat_boxes[i] +'" checked/>'
+                } else {
+                  tr += '<input name="threat-category" type="checkbox" value="' + tcat_boxes[i] +'"/>'
+                }
+              }
+
+              tr += '<td><input value="'+ assets[asset].threats[threat].risk + '" placeholder="e.g. 7"/></td></tr>'
+
+              tbody.innerHTML += tr;
+
             }
             
           }
@@ -168,13 +209,7 @@ function cancelEdit(callback) {
 
 function displayTable() {
   // Name | C|I|A | 
-
-
   var tbody = document.getElementById('tbody');
-  if(tbody.innerHTML != null){
-    tbody.innerHTML = null;
-  }
-  console.log("hello");
   //console.log(data[1]);
   for(asset in assets){
     console.log(asset);
@@ -188,6 +223,8 @@ function displayTable() {
   /* We add the table row to the table body */
 
 }
+
+
 
 function saveData(data, callback) {
   var type;
@@ -213,7 +250,45 @@ function saveData(data, callback) {
 
   data.id = document.getElementById("node-id").value;
 
-  assets.push(new Asset(data.id, name, description, tags, type, c, i, a));
+ // threat data
+
+  var threat_name = document.getElementById("threat-name").value;
+
+  var tcats = []
+  var tcat_boxes = document.querySelectorAll('input[name="threat-category"]:checked');
+  Array.prototype.forEach.call(tcat_boxes, function (el) {
+    tcats.push(el.value)
+  })
+
+  var threat_risk = document.getElementById("threat-risk").value;
+
+  var exists = false;
+  var existing;
+  for(asset in assets) {
+    console.log('in');
+    if(assets[asset].id === data.id){
+      exists = true;
+      existing = asset;
+      break;
+    }
+  }
+
+  if (exists) {
+    assets[existing].name = name;
+    assets[existing].description = description;
+    assets[existing].tags = tags;
+    assets[existing].type = type;
+    assets[existing].risk_c = c;
+    assets[existing].risk_i = i;
+    assets[existing].risk_a = a;
+
+    assets[existing].threats.push(new Threat(threat_name, tcats, threat_risk));
+  } else {
+    var asset = new Asset(data.id, name, description, tags, type, c, i, a)
+    asset.threats.push(new Threat(threat_name, tcats, threat_risk));
+    assets.push(asset);
+  }
+    
   console.log(assets)
 
   //data.cia = document.getElementById("node-CIA").value
@@ -259,3 +334,30 @@ function AddClass(element, name) {
   }
 }
 
+// Hide elements that are not selected
+// function RemoveClass(element, name) {
+//   var i, arr1, arr2;
+//   arr1 = element.className.split(" ");
+//   arr2 = name.split(" ");
+//   for (i = 0; i < arr2.length; i++) {
+//     while (arr1.indexOf(arr2[i]) > -1) {
+//       arr1.splice(arr1.indexOf(arr2[i]), 1);
+//     }
+//   }
+//   element.className = arr1.join(" ");
+// }
+
+// // Add active class to the current control button (highlight it)
+// var btnContainer = document.getElementById("myBtnContainer");
+// var btns = btnContainer.getElementsByClassName("btn");
+// for (var i = 0; i < btns.length; i++) {
+//   btns[i].addEventListener("click", function() {
+//     var current = document.getElementsByClassName("active");
+//     current[0].className = current[0].className.replace(" active", "");
+//     this.className += " active";
+//   });
+// }
+
+// function FilterThreats(threat){
+  
+// }
